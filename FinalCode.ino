@@ -26,7 +26,7 @@ DHT dht;
 float humidity = 0.0, temperature = 0.0;
 int answer = 0;
 char response[100];
-
+int prevTime = millis();
 
 
 #define	uchar	unsigned char
@@ -45,26 +45,39 @@ void setup()
   while (sendATcommand("AT", "OK", 1000) == 0);
   sendATcommand("", "Call Ready", 5000);
   Serial.println("Done");
+  delay(3000);
   setupGPRS();
+  
 }
-
 /*---------------------------------------*/
 void loop ()
 {
+  
   int value = readDustValue();
   readTH(&temperature, &humidity);
-  if(Serial.available())
-  {  
-    if(Serial.read() == 'T')
-      sendTransaction(temperature, humidity, 125, readMQ7());
+  if (millis()-prevTime >= 10000)
+  {
+      sendTransaction(temperature, value, humidity, readMQ7());
+      prevTime = millis();
   }
   delay(100);
+  Serial.println("--------------------------------------");
+  Serial.print(temperature);
+  Serial.print('\t');
+  Serial.print(humidity);
+  Serial.print('\t');
+  Serial.print(value);
+  Serial.print('\t');
+  Serial.println(readMQ7());
+  Serial.println("--------------------------------------");
+
 }
 
 /*---------------------------------------*/
 int readDustValue()
 {
-  return (dsm501.getAQI());
+  dsm501.update();
+  return(dsm501.getPM25());
 }
 
 /*---------------------------------------*/
